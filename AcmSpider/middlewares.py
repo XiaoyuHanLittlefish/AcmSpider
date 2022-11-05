@@ -7,7 +7,7 @@ from scrapy import signals
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
-from selenium import webdriver
+# from selenium import webdriver
 
 
 class AcmspiderSpiderMiddleware:
@@ -106,8 +106,8 @@ class AcmspiderDownloaderMiddleware:
 
 class VjudgecontestMiddleware(object):
     def process_request(self, request, spider):
-        print("VjudgecontestMiddleware is starting...")
-        driver = webdriver.Chrome()
+        # print("VjudgecontestMiddleware is starting...")
+        # driver = webdriver.Chrome()
         # driver.get(request.url)
         # time.sleep(1)
         # js = "var q=document.documentElement.scrollTop=10000"

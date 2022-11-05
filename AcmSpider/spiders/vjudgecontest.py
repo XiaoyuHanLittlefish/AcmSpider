@@ -1,22 +1,27 @@
 import scrapy
-import re
+
 
 class VjudgecontestSpider(scrapy.Spider):
     name = 'vjudgecontest'
     allowed_domains = ['vjudge.csgrandeur.cn']
-    start_urls = ['https://vjudge.csgrandeur.cn']
+    # start_urls = ['https://vjudge.csgrandeur.cn']
+
+    def start_requests(self):
+        url = 'https://vjudge.csgrandeur.cn/user/login'
+
+        yield scrapy.FormRequest(
+            url=url,
+            method='POST',
+            formdata={
+                'username': 'XiaoyuHan',
+                'password': 'ybzwanqad'
+            },
+            callback=self.parse)
 
     def parse(self, response):
-        # form_data = {
-        #     'login-username': 'XiaoyuHan',
-        #     'login-password': 'ybzwanqad'
-        # }
-        # yield scrapy.FormRequest.from_response(response,
-        #     formdata=form_data,callback=self.after_login
-        #     ,formid='login-form')
-        file_name = 'vjudge.html'
-        open(file_name, 'wb+').write(response.body)
+        with open('vjudge.txt', 'w+') as file:
+            file.write(str(response.headers.get('Set-Cookie')))
+        print('Login Successful')
 
-    def after_login(self,response):  # 验证是否请求成功
-        print(re.findall('Learn Git and GitHub without any code!',response.body.decode()))
+
 
