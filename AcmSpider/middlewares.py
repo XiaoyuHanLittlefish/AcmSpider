@@ -7,6 +7,7 @@ from scrapy import signals
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
+from selenium import webdriver
 
 
 class AcmspiderSpiderMiddleware:
@@ -101,3 +102,23 @@ class AcmspiderDownloaderMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
+
+
+class VjudgecontestMiddleware(object):
+    def process_request(self, request, spider):
+        print("VjudgecontestMiddleware is starting...")
+        driver = webdriver.Chrome()
+        # driver.get(request.url)
+        # time.sleep(1)
+        # js = "var q=document.documentElement.scrollTop=10000"
+        # i = 1
+        # while (i <= 10):
+        #     driver.find_element_by_xpath('//*[@id="page_bar0"]/div').click()
+        #     i = i + 1
+        # driver.execute_script(js)  # 可执行js，模仿用户操作。此处为将页面拉至最底端。
+        # time.sleep(3)
+        # body = driver.page_source
+        # print("访问" + request.url)
+        # return HtmlResponse(driver.current_url, body=body, encoding='utf-8', request=request)
+        print('------------------------------------------------------------')
+        return None
