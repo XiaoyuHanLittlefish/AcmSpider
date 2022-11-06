@@ -13,6 +13,7 @@ LOGIN_FORM_DATA = {
 COOKIE_PATH = 'AcmSpider/config/cookie.py'
 
 GROUP_LIST = (
+    'nwuacm2022news',
     'nwuacm2021news',
     'nwuacm2020news',
 )
