@@ -10,7 +10,8 @@ LOGIN_FORM_DATA = {
     'password': PASSWORD
 }
 
-COOKIE_PATH = 'AcmSpider/config/cookie.py'
+CONFIG_PATH = 'AcmSpider/config/vjudge/'
+COOKIE_PATH = CONFIG_PATH + 'cookie.py'
 
 GROUP_LIST = (
     'nwuacm2022news',

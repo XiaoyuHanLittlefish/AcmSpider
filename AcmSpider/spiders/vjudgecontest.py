@@ -1,7 +1,7 @@
 import scrapy
 import json
 
-from AcmSpider.config.vjudge_config import LOGIN_URL, LOGIN_FORM_DATA, COOKIE_PATH, GROUP_LIST, VJUDGE_URL
+from AcmSpider.config.vjudge.vjudge_config import CONFIG_PATH, LOGIN_URL, LOGIN_FORM_DATA, COOKIE_PATH, GROUP_LIST, VJUDGE_URL
 
 
 class VjudgecontestSpider(scrapy.Spider):
@@ -19,19 +19,16 @@ class VjudgecontestSpider(scrapy.Spider):
         )
 
     def parse(self, response):
+        cookies = str(response.headers.get('Set-Cookie'))
         with open(COOKIE_PATH, 'w+') as file:
-            file.write('COOKIE = ' + str(response.headers.get('Set-Cookie')))
-
-        from AcmSpider.config.cookie import COOKIE
-        # cookies = {i.split('=')[0]: i.split('=')[1] for i in COOKIE.split('; ')}
-        cookies = COOKIE
+            file.write('COOKIE = ' + cookies)
 
         def get_group_url(group_id):
             return VJUDGE_URL + '/group/' + group_id
 
         for group in GROUP_LIST:
             meta = {
-                'group': group
+                'group': group,
             }
             yield scrapy.Request(
                 url=get_group_url(group),
@@ -45,9 +42,12 @@ class VjudgecontestSpider(scrapy.Spider):
             )
 
     def get_contest_list(self, response):
-        contest_list = json.loads(response.xpath("//textarea[@name='dataJson']/text()").extract()[0])['contests']
-        with open(str(response.meta['group']) + '.txt', 'w+') as file:
+        contest_list = json.loads(response.xpath(
+            "//textarea[@name='dataJson']/text()").extract()[0])['contests']
+        with open(CONFIG_PATH + str(response.meta['group']) + '.txt', 'w+') as file:
             file.write(str(contest_list))
+
+        contest_list = [Contest(contest_info) for contest_info in contest_list]
 
 
 class Contest(object):
@@ -57,8 +57,3 @@ class Contest(object):
         contest_player_num = contest_info[2]
         contest_begin_time = contest_info[3]
         contest_end_time = contest_info[4]
-
-
-
-
-
