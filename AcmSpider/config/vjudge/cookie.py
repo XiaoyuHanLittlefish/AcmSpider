@@ -1,1 +1,1 @@
-COOKIE = b'Jax.Q=XiaoyuHan|MPGOCC6OH6KWMKDFVTDJ1MRU3VO1A4; Domain=.vjudge.csgrandeur.cn; Expires=Tue, 07-Nov-2023 08:35:34 GMT; Path=/'
+COOKIE = b'Jax.Q=NWUACM|IXY576QQ0H8FJ66F1G0UMP8HAB1W9G; Max-Age=31536000; Expires=Thu, 25 Jan 2024 16:08:33 GMT; Domain=vjudge.csgrandeur.cn; Path=/'
