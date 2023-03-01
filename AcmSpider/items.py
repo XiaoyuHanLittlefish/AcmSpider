@@ -19,8 +19,13 @@ class NowcoderItem(scrapy.Item):
     solve_problem_number = scrapy.Field()
 
 
-class VjudgeContestItem(scrapy.Item):
-    ...
+class VjudgeItem(scrapy.Item):
+    # vj_group
+    group_id = scrapy.Field()
+    group_name = scrapy.Field()
+    # vj_contest
+    contest_id = scrapy.Field()
+
 
 
 

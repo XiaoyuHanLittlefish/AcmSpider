@@ -25,6 +25,7 @@ class VjudgecontestSpider(scrapy.Spider):
         cookies = str(response.headers.get('Set-Cookie'))
         with open(COOKIE_PATH, 'w+') as file:
             file.write('COOKIE = ' + cookies)
+
         def get_group_url(group_id):
             return VJUDGE_URL + '/group/' + group_id
 
@@ -51,10 +52,13 @@ class VjudgecontestSpider(scrapy.Spider):
             file.write(str(contest_list))
 
         contest_list = [Contest(contest_info) for contest_info in contest_list]
+        db = pymysql.connect(host='localhost', port=3306, user='root', password='root', database='tp6', charset='utf8')
+        cursor = db.cursor()
 
         for contest in contest_list:
             meta = {
                 'contest': contest,
+                'database_cursor': cursor,
             }
             # 获取contest的设置
             contest_url = contest.url()
@@ -68,19 +72,6 @@ class VjudgecontestSpider(scrapy.Spider):
                 meta=meta,
                 callback=self.parse_contest
             )
-            # 获取contest的rank
-            contest_rank_url = contest.rank_url()
-            yield scrapy.Request(
-                url=contest_rank_url,
-                method='GET',
-                headers={
-                    'cookie': response.meta['cookies'],
-                    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 Edg/108.0.1462.76',
-                },
-                meta=meta,
-                callback=self.parse_contest_rank
-            )
-
 
     def parse_contest(self, response):
         contest_datajson = json.loads(response.xpath("/html/body/textarea/text()").extract()[0])
@@ -88,19 +79,33 @@ class VjudgecontestSpider(scrapy.Spider):
         penalty = contest_datajson['penalty']
         sum_time = contest_datajson['sumTime']
 
-        response.meta['penalty'] = penalty
-        response.meta['sum_time'] = sum_time
+        contest = response.meta['contest']
+        contest.penalty = penalty
+        contest.sum_time = sum_time
+        meta = {
+            'contest': contest,
+        }
+        # 获取contest的rank
+        contest_rank_url = contest.rank_url()
+        yield scrapy.Request(
+            url=contest_rank_url,
+            method='GET',
+            headers={
+                'cookie': response.meta['cookies'],
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 Edg/108.0.1462.76',
+            },
+            meta=meta,
+            callback=self.parse_contest_rank
+        )
 
     def parse_contest_rank(self, response):
-        with open(str(response.meta['contest'].contest_id) + '.json', 'wb+') as file:
-            file.write(response.body)
+        # with open(str(response.meta['contest'].contest_id) + '.json', 'wb+') as file:
+        #     file.write(response.body)
 
         contest = json.loads(response.body)
 
         user_list = [User(user_id, user_info) for (user_id, user_info) in contest['participants'].items()]
         submission_list = [Submission(submission_info) for submission_info in contest['submissions']]
-
-        print(response.meta)
 
 
 class User(object):
