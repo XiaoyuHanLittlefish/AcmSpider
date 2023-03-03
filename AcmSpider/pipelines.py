@@ -11,12 +11,15 @@ from itemadapter import ItemAdapter
 
 class AcmspiderPipeline:
     def __init__(self):
-        self.db = pymysql.connect(host='localhost', port=3306, user='root', password='root', database='tp6', charset='utf8')
-        self.cursor = self.db.cursor()
+        pass
+        # self.db = pymysql.connect(host='localhost', port=3306, user='root', password='root', database='tp6', charset='utf8')
+        # self.cursor = self.db.cursor()
 
     def process_item(self, item, spider):
-        return item
+        pass
+        # return item
 
     def close_spider(self, spider):
-        self.cursor.close()
-        self.db.close()
+        pass
+        # self.cursor.close()
+        # self.db.close()
