@@ -1,1 +1,3 @@
-AcmSpider/AcmSpider/__pycache__/
+/AcmSpider/__pycache__/
+*.json
+/.idea/
