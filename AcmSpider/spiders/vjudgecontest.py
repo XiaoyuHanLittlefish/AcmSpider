@@ -106,11 +106,13 @@ class VjudgecontestSpider(scrapy.Spider):
 
         penalty = contest_datajson['penalty']
         sum_time = contest_datajson['sumTime']
+        manager_id = contest_datajson['managerId']
 
         contest = response.meta['contest']
         contest.group_id = response.meta['group'].id
         contest.penalty = penalty
         contest.sum_time = sum_time
+        contest.manager_id = manager_id
 
         db = response.meta['database']
         cursor = db.cursor()
@@ -119,17 +121,20 @@ class VjudgecontestSpider(scrapy.Spider):
             cursor.execute(contest_select_sql)
             result = cursor.fetchall()
             if result:
-                contest_update_sql = "UPDATE vj_contest SET \
+                contest_update_sql = \
+                   "UPDATE vj_contest SET \
                     contest_name = '%s', \
                     group_id = %d, \
                     player_num = %d, \
+                    manager_id = %d, \
                     begin_time = %d, \
                     end_time = %d, \
                     penalty = %d, \
                     sum_time = %d \
                     WHERE contest_id = %d" \
-                    % (contest.name, contest.group_id, contest.player_num, contest.begin_time,
-                       contest.end_time, contest.penalty, contest.sum_time, contest.id)
+                    % (contest.name, contest.group_id, contest.player_num, contest.manager_id,
+                       contest.begin_time, contest.end_time, contest.penalty, contest.sum_time, 
+                       contest.id)
                 try:
                     cursor.execute(contest_update_sql)
                     db.commit()
@@ -138,8 +143,8 @@ class VjudgecontestSpider(scrapy.Spider):
                     exit(1)
             else:
                 contest_insert_sql = "INSERT INTO vj_contest VALUES (%d, '%s', %d, %d, %d, %d, %d, %d)" \
-                    % (contest.id, contest.name, contest.group_id, contest.player_num, contest.begin_time,
-                        contest.end_time, contest.penalty, contest.sum_time)
+                    % (contest.id, contest.name, contest.group_id, contest.player_num, contest.manager_id, 
+                       contest.begin_time, contest.end_time, contest.penalty, contest.sum_time)
                 try:
                     cursor.execute(contest_insert_sql)
                     db.commit()
@@ -149,6 +154,70 @@ class VjudgecontestSpider(scrapy.Spider):
         except:
             print('failed to select contest info from mysql')
             exit(1)
+        
+        problems = contest_datajson['problems']
+
+        contest_problem_select_sql = "SELECT * FROM vj_contest_problem \
+                                      WHERE contest_id = %d" \
+                                      % (contest.id)
+        try:
+            cursor.execute(contest_problem_select_sql)
+            results = cursor.fetchall()
+            contest_problem_ids = [result[0] for result in results]
+        except:
+            print('failed to select contest problems info from mysql')
+
+        for problem_info in problems:
+            problem = Problem(problem_info['pid'], problem_info['title'], problem_info['oj'],
+                              problem_info['probNum'], problem_info['num'], problem_info['weight'])
+            if problem.id in contest_problem_ids:
+                contest_problem_ids.remove(problem.id)
+                contest_problem_update_sql = "UPDATE vj_contest_problem SET \
+                                              problem_weight = %d" % (problem.weight)
+                try:
+                    cursor.execute(contest_problem_update_sql)
+                    db.commit()
+                except:
+                    print('failed to update contest problem info to mysql')
+                    exit(1)
+                continue
+
+            problem_select_sql = "SELECT * FROM vj_problem WHERE problem_id = %d" % problem.id
+            try:
+                cursor.execute(problem_select_sql)
+                result = cursor.fetchall()
+                if not result:
+                    problem_insert_sql = "INSERT INTO vj_problem VALUES (%d, '%s', '%s', '%s', '%s')" \
+                                         % (problem.id, problem.title, problem.oj, problem.probnum, problem.num)
+                    try:
+                        cursor.execute(problem_insert_sql)
+                        db.commit()
+                    except:
+                        print('failed to insert problem info to mysql')
+                        exit(1)
+            except:
+                print('failed to select problem info from mysql')
+                exit(1)
+
+            contest_problem_insert_sql = "INSERT INTO vj_contest_problem VALUES (%d, %d, %d)" \
+                                         % (problem.id, contest.id, problem.weight)
+            try:
+                cursor.execute(contest_problem_insert_sql)
+                db.commit()
+            except:
+                print('failed to insert contest problem info to mysql')
+                exit(1)
+        
+        for deleted_problem_id in contest_problem_ids:
+            contest_problem_delete_sql = "DELETE FROM vj_contest_problem \
+                                          WHERE problem_id = %d AND contest_id = %d" \
+                                          % (deleted_problem_id, contest.id)
+            try:
+                cursor.execute(contest_problem_delete_sql)
+                db.commit()
+            except:
+                print('failed to delete contest problem info from mysql')
+                exit(1)
 
         meta = {
             'group': response.meta['group'],
@@ -178,7 +247,7 @@ class VjudgecontestSpider(scrapy.Spider):
         db = response.meta['database']
         cursor = db.cursor()
 
-        user_list = [User(user_id, user_info) 
+        user_list = [User(user_id, user_info)
                      for (user_id, user_info)
                      in contest_info['participants'].items()]
         for user in user_list:
@@ -216,6 +285,37 @@ class VjudgecontestSpider(scrapy.Spider):
         submission_list = [Submission(submission_info)
                            for submission_info
                            in contest_info['submissions']]
+        # for submission in submission_list:
+        #     submission.contest_id = response.meta['contest'].id
+        #     submission_select_sql = "SELECT * FROM vj_user WHERE user_id = %s AND group_id = %d" % (
+        #         user.id, user.group_id)
+        #     try:
+        #         cursor.execute(user_select_sql)
+        #         result = cursor.fetchall()
+        #         if result:
+        #             user_update_sql = "UPDATE vj_user SET \
+        #                 user_name = '%s', \
+        #                 user_nickname = '%s' \
+        #                 WHERE user_id = %s AND group_id = %d" \
+        #                 % (user.username, user.nickname, user.id, user.group_id)
+        #             try:
+        #                 cursor.execute(user_update_sql)
+        #                 db.commit()
+        #             except:
+        #                 print('failed to update user info to mysql')
+        #                 exit(1)
+        #         else:
+        #             user_insert_sql = "INSERT INTO vj_user VALUES (%s, %d, '%s', '%s')" \
+        #                 % (user.id, user.group_id, user.username, user.nickname)
+        #             try:
+        #                 cursor.execute(user_insert_sql)
+        #                 db.commit()
+        #             except:
+        #                 print('failed to insert user info to mysql')
+        #                 exit(1)
+        #     except:
+        #         print('failed to select user info from mysql')
+        #         exit(1)
 
 
 class Group(object):
@@ -229,6 +329,16 @@ class User(object):
         self.id = user_id
         self.username = user_info[0]
         self.nickname = user_info[1]
+
+
+class Problem(object):
+    def __init__(self, problem_id, problem_title, problem_oj, problem_probnum, problem_num, problem_weight):
+        self.id = problem_id
+        self.title = problem_title
+        self.oj = problem_oj
+        self.probnum = problem_probnum
+        self.num = problem_num
+        self.weight = problem_weight
 
 
 class Submission(object):

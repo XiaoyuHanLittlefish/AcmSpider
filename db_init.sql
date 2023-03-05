@@ -13,6 +13,7 @@ CREATE TABLE if NOT EXISTS `vj_contest`(
 	`contest_name` VARCHAR(255) NOT NULL COMMENT '比赛名称',
 	`group_id` INT NOT NULL COMMENT '所属group的id',
     `player_num` INT NOT NULL COMMENT '参与contest的人数',
+    `manager_id` INT NOT NULL COMMENT '管理员id',
     `begin_time` BIGINT NOT NULL COMMENT '比赛开始时间戳',
     `end_time` BIGINT NOT NULL COMMENT '比赛结束时间戳',
     `penalty` INT NOT NULL DEFAULT(0) COMMENT '错误提交的罚时（单位：秒）',
@@ -20,11 +21,20 @@ CREATE TABLE if NOT EXISTS `vj_contest`(
 	PRIMARY KEY(`contest_id`)
 );
 
-CREATE TABLE if NOT EXISTS `vj_contest_problem` (
-	`problem_id` INT AUTO_INCREMENT COMMENT '题目id(主键)',
-	`contest_id` INT NOT NULL COMMENT '所属比赛id',
-    `problem_no` INT NOT NULL COMMENT '题号',
+CREATE TABLE if NOT EXISTS `vj_problem` (
+	`problem_id` INT NOT NULL COMMENT '题目id(主键)',
+    `problem_title` VARCHAR(255) NOT NULL COMMENT '题目名称',
+    `problem_oj` VARCHAR(255) NOT NULL COMMENT '题目所属OJ',
+    `problem_probnum` VARCHAR(255) NOT NULL COMMENT '题目所在OJ题号',
+    `problem_num` VARCHAR(255) NOT NULL COMMENT '题号',
     PRIMARY KEY(`problem_id`)
+);
+
+CREATE TABLE if NOT EXISTS `vj_contest_problem` (
+	`problem_id` INT NOT NULL COMMENT '题目id',
+    `contest_id` INT NOT NULL COMMENT '比赛id',
+    `problem_weight` INT NOT NULL DEFAULT(1) COMMENT '题目权重',
+    PRIMARY KEY(`problem_id`, `contest_id`)
 );
 
 CREATE TABLE if NOT EXISTS `vj_contest_result` (
