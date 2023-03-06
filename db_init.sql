@@ -49,8 +49,8 @@ CREATE TABLE if NOT EXISTS `vj_contest_result` (
 CREATE TABLE if NOT EXISTS `vj_submission`(
 	`submission_id` int AUTO_INCREMENT COMMENT '提交id(主键)',
 	`contest_id` INT NOT NULL COMMENT '提交比赛id',
-	`user_id` INT NOT NULL COMMENT '提交的用户id',
     `problem_id` INT NOT NULL COMMENT '提交的题目id',
+	`user_id` INT NOT NULL COMMENT '提交的用户id',
     `submit_time` BIGINT NOT NULL COMMENT '提交时间戳',
     `is_accepted` INT NOT NULL COMMENT '是否正确(1:正确/0:未正确)',
 	PRIMARY KEY(`submission_id`)

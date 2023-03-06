@@ -122,7 +122,7 @@ class VjudgecontestSpider(scrapy.Spider):
             result = cursor.fetchall()
             if result:
                 contest_update_sql = \
-                   "UPDATE vj_contest SET \
+                    "UPDATE vj_contest SET \
                     contest_name = '%s', \
                     group_id = %d, \
                     player_num = %d, \
@@ -133,7 +133,7 @@ class VjudgecontestSpider(scrapy.Spider):
                     sum_time = %d \
                     WHERE contest_id = %d" \
                     % (contest.name, contest.group_id, contest.player_num, contest.manager_id,
-                       contest.begin_time, contest.end_time, contest.penalty, contest.sum_time, 
+                       contest.begin_time, contest.end_time, contest.penalty, contest.sum_time,
                        contest.id)
                 try:
                     cursor.execute(contest_update_sql)
@@ -142,8 +142,8 @@ class VjudgecontestSpider(scrapy.Spider):
                     print('failed to update contest info to mysql')
                     exit(1)
             else:
-                contest_insert_sql = "INSERT INTO vj_contest VALUES (%d, '%s', %d, %d, %d, %d, %d, %d)" \
-                    % (contest.id, contest.name, contest.group_id, contest.player_num, contest.manager_id, 
+                contest_insert_sql = "INSERT INTO vj_contest VALUES (%d, '%s', %d, %d, %d, %d, %d, %d, %d)" \
+                    % (contest.id, contest.name, contest.group_id, contest.player_num, contest.manager_id,
                        contest.begin_time, contest.end_time, contest.penalty, contest.sum_time)
                 try:
                     cursor.execute(contest_insert_sql)
@@ -154,8 +154,10 @@ class VjudgecontestSpider(scrapy.Spider):
         except:
             print('failed to select contest info from mysql')
             exit(1)
-        
+
         problems = contest_datajson['problems']
+        contest.problem_ids = [problem_info['pid']
+                               for problem_info in problems]
 
         contest_problem_select_sql = "SELECT * FROM vj_contest_problem \
                                       WHERE contest_id = %d" \
@@ -187,6 +189,10 @@ class VjudgecontestSpider(scrapy.Spider):
                 cursor.execute(problem_select_sql)
                 result = cursor.fetchall()
                 if not result:
+                    split_titles = problem.title.split('\'')
+                    problem.title = split_titles[0]
+                    for i in range(2, len(split_titles)):
+                        problem.title = problem.title + '\'' + split_titles[i]
                     problem_insert_sql = "INSERT INTO vj_problem VALUES (%d, '%s', '%s', '%s', '%s')" \
                                          % (problem.id, problem.title, problem.oj, problem.probnum, problem.num)
                     try:
@@ -207,7 +213,7 @@ class VjudgecontestSpider(scrapy.Spider):
             except:
                 print('failed to insert contest problem info to mysql')
                 exit(1)
-        
+
         for deleted_problem_id in contest_problem_ids:
             contest_problem_delete_sql = "DELETE FROM vj_contest_problem \
                                           WHERE problem_id = %d AND contest_id = %d" \
@@ -282,40 +288,33 @@ class VjudgecontestSpider(scrapy.Spider):
                 print('failed to select user info from mysql')
                 exit(1)
 
+        contest = response.meta['contest']
+
         submission_list = [Submission(submission_info)
                            for submission_info
                            in contest_info['submissions']]
-        # for submission in submission_list:
-        #     submission.contest_id = response.meta['contest'].id
-        #     submission_select_sql = "SELECT * FROM vj_user WHERE user_id = %s AND group_id = %d" % (
-        #         user.id, user.group_id)
-        #     try:
-        #         cursor.execute(user_select_sql)
-        #         result = cursor.fetchall()
-        #         if result:
-        #             user_update_sql = "UPDATE vj_user SET \
-        #                 user_name = '%s', \
-        #                 user_nickname = '%s' \
-        #                 WHERE user_id = %s AND group_id = %d" \
-        #                 % (user.username, user.nickname, user.id, user.group_id)
-        #             try:
-        #                 cursor.execute(user_update_sql)
-        #                 db.commit()
-        #             except:
-        #                 print('failed to update user info to mysql')
-        #                 exit(1)
-        #         else:
-        #             user_insert_sql = "INSERT INTO vj_user VALUES (%s, %d, '%s', '%s')" \
-        #                 % (user.id, user.group_id, user.username, user.nickname)
-        #             try:
-        #                 cursor.execute(user_insert_sql)
-        #                 db.commit()
-        #             except:
-        #                 print('failed to insert user info to mysql')
-        #                 exit(1)
-        #     except:
-        #         print('failed to select user info from mysql')
-        #         exit(1)
+        for submission in submission_list:
+            submission.contest_id = contest.id
+            submission.problem_id = contest.problem_ids[submission.problem_num]
+            submission_select_sql = "SELECT * FROM vj_submission \
+                                     WHERE user_id = %d AND contest_id = %d AND problem_id = %d" % (
+                submission.user_id, submission.contest_id, submission.problem_id)
+            try:
+                cursor.execute(submission_select_sql)
+                result = cursor.fetchall()
+                if not result:
+                    submission_insert_sql = "INSERT INTO vj_submission VALUES (0, %d, %d, %d, %d, %d)" \
+                        % (submission.contest_id, submission.problem_id, submission.user_id,
+                           submission.submit_time, submission.is_accepted)
+                    try:
+                        cursor.execute(submission_insert_sql)
+                        db.commit()
+                    except:
+                        print('failed to insert submission info to mysql')
+                        exit(1)
+            except:
+                print('failed to select submission info from mysql')
+                exit(1)
 
 
 class Group(object):
