@@ -15,6 +15,6 @@ COOKIE_PATH = CONFIG_PATH + 'cookie.py'
 
 GROUP_LIST = (
     'nwuacm2022news',
-    # 'nwuacm2021news',
-    # 'nwuacm2020news',
+    'nwuacm2021news',
+    'nwuacm2020news',
 )
